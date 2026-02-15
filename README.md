@@ -29,8 +29,8 @@ Error: ffmpeg command not found
 # build.sh
 npm install
 python process.py
-gcc -o output main.c    # ← Personne n'a noté que gcc était nécessaire
-ffmpeg -i video.mp4     # ← Personne n'a noté que ffmpeg était nécessaire
+gcc -o output main.c    # Personne n'a noté que gcc était nécessaire
+ffmpeg -i video.mp4     # Personne n'a noté que ffmpeg était nécessaire
 ```
 
 Les développeurs oublient de documenter les dépendances système.
@@ -242,10 +242,7 @@ sudo mv enclos /usr/local/bin/
 
 ---
 
-## Licence
-
-MIT License
-
----
+## Collaboration
+-pour toute envie de collaboration contactez moi
 
 *enclos - Parce que documenter ses dépendances manuellement, c'est has been.*
