@@ -264,6 +264,17 @@ sudo mv enclos /usr/local/bin/
 
 ---
 
+## Documentation & Ressources eBPF
+
+Si tu souhaites comprendre la magie sous le capot d'Enclos, voici les meilleures ressources pour découvrir eBPF :
+
+- [eBPF.io (Site Officiel)](https://ebpf.io/) - L'introduction parfaite à la technologie par la fondation eBPF.
+- [Cilium eBPF Go Library](https://ebpf-go.dev/) - La documentation de la librairie Go que nous utilisons pour charger nos programmes eBPF.
+- [BPF Compiler Collection (BCC)](https://github.com/iovisor/bcc) - Le dépôt historique contenant d'excellents exemples et tutos (notamment `execsnoop`).
+- [Learning eBPF par Liz Rice](https://isovalent.com/books/learning-ebpf/) - Le livre de référence absolu pour comprendre comment observer le kernel Linux.
+
+---
+
 ## Collaboration
 - Pour toute envie de collaboration, contactez-moi !
 
