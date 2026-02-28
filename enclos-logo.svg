@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800&amp;display=swap');
+      .logo-text {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 68px;
+        fill: #00FFFF;
+        letter-spacing: 0.1em;
+      }
+    </style>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" fill="#000000" />
+
+  <!-- Icon: Abstract 'E' (Three thick horizontal lines) -->
+  <g transform="translate(130, 115)">
+    <!-- Top bar -->
+    <rect x="0" y="0" width="252" height="42" fill="#00FFFF" />
+    <!-- Middle bar -->
+    <rect x="0" y="78" width="185" height="42" fill="#00FFFF" />
+    <!-- Bottom bar -->
+    <rect x="0" y="156" width="228" height="42" fill="#00FFFF" />
+  </g>
+
+  <!-- Text: ENCLOS -->
+  <!-- We horizontally scale the text by 1.35 to perfectly replicate the "extended/wide" futuristic geometric font from the image -->
+  <g transform="translate(256, 395)">
+    <text 
+      class="logo-text"
+      x="0" 
+      y="0" 
+      text-anchor="middle"
+      transform="scale(1.35, 1)"
+    >ENCLOS</text>
+  </g>
+</svg>

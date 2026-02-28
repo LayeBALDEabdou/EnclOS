@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./enclos-logo.svg" alt="Enclos Logo" width="300" />
+</p>
+
 # enclos
 
 **Un outil Linux pour détecter automatiquement les dépendances de tes projets, par l'observation directe du kernel.**
@@ -104,12 +108,24 @@ Le kernel voit **tout**. Impossible d'oublier une dépendance.
 
 ## Utilisation
 
-### 1. Détecter les dépendances d'un projet
+### 1. Détecter les dépendances de n'importe quel projet
+
+`enclos` s'en fiche du langage ou de l'outil de build. Il observe la réalité de l'exécution pour **n'importe quelle commande Linux** :
 
 ```bash
-$ cd mon-projet
+# Pour un script Bash
 $ enclos track ./build.sh
-# Génère enclave.lock listant toutes les dépendances réelles
+
+# Pour un projet Python
+$ enclos track python main.py
+
+# Pour un projet Node.js / Frontend
+$ enclos track npm run build
+
+# Pour un projet C/C++
+$ enclos track make all
+
+# Le fichier enclave.lock généré liste la vérité absolue des binaires et librairies utilisés
 ```
 
 ### 2. Le "Killer Feature" : Exporter la configuration
