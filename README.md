@@ -1,20 +1,20 @@
 # enclos
 
-**Un outil Linux pour détecter automatiquement les dépendances de tes projets**
+**Un outil Linux pour détecter automatiquement les dépendances de tes projets, par l'observation directe du kernel.**
 
 ---
 
 ## Le problème
 
-Tu clones un projet. Le README dit :
+Tu clones un projet. Le `README` dit :
 
-```
+```text
 Prérequis : Node 18, Python 3.11
 ```
 
 Tu installes tout. Tu lances le build. Ça plante :
 
-```
+```text
 Error: libssl.so.3 not found
 Error: ffmpeg command not found
 ```
@@ -40,12 +40,12 @@ Résultat : "Ça marche sur ma machine" mais pas ailleurs.
 
 ## La solution : enclos
 
-enclos **observe** ce que ton projet utilise réellement et génère la liste complète automatiquement.
+`enclos` **observe** ce que ton projet utilise réellement pendant son exécution et génère la liste complète automatiquement.
 
 ```bash
 $ enclos track ./build.sh
 
-Analyse en cours...
+Analyse en cours via eBPF...
 
 Dépendances détectées :
   - node 18.0.0
@@ -64,9 +64,9 @@ Fichier enclave.lock généré.
 
 ## Comment ça marche ?
 
-Le tracking se fait au niveau du **kernel Linux** :
+Le tracking se fait au niveau du **kernel Linux**, de manière moderne et sécurisée grâce à **eBPF** :
 
-```
+```text
 ┌─────────────────────────────────────┐
 │         Ton script build.sh         │
 └─────────────────┬───────────────────┘
@@ -75,29 +75,30 @@ Le tracking se fait au niveau du **kernel Linux** :
 ┌─────────────────────────────────────┐
 │           Kernel Linux              │
 │  ┌───────────────────────────────┐  │
-│  │   Module enclos               │  │
-│  │   - Voit chaque binaire lancé │  │
-│  │   - Voit chaque .so chargé    │  │
-│  │   - Voit chaque fichier lu    │  │
+│  │   Programme eBPF (Sandboxé)   │  │
+│  │   - Intercepte execve()       │  │
+│  │   - Intercepte mmap() (.so)   │  │
+│  │   - Intercepte openat()       │  │
 │  └───────────────────────────────┘  │
 └─────────────────────────────────────┘
                   │
                   ▼
-        Fichier enclave.lock
-        (liste complète)
+         Fichier enclave.lock
+         (liste complète et prouvée)
 ```
 
 Le kernel voit **tout**. Impossible d'oublier une dépendance.
 
 ---
 
-## Pourquoi le kernel ?
+## Pourquoi l'observabilité Kernel (eBPF) ?
 
-| Niveau | Ce qu'il peut voir |
-|--------|-------------------|
-| npm/pip | Seulement ses propres packages |
-| Script bash | Peut rater des sous-dépendances |
-| **Kernel** | **Tout** : binaires, librairies, fichiers |
+| Niveau | Ce qu'il peut voir | Risque de crash ? |
+|--------|-------------------|-------------------|
+| npm/pip | Seulement ses propres packages | Aucun |
+| Script bash | Peut rater des sous-dépendances | Aucun |
+| Module Kernel (.ko) | **Tout** : binaires, librairies... | **Élevé** (Kernel panic) |
+| **eBPF (enclos)** | **Tout** : binaires, librairies... | **Aucun** (Vérifié et sandboxé par Linux) |
 
 ---
 
@@ -108,32 +109,37 @@ Le kernel voit **tout**. Impossible d'oublier une dépendance.
 ```bash
 $ cd mon-projet
 $ enclos track ./build.sh
-# Génère enclave.lock
+# Génère enclave.lock listant toutes les dépendances réelles
 ```
 
-### 2. Installer les dépendances sur une autre machine
+### 2. Le "Killer Feature" : Exporter la configuration
+
+Pourquoi réécrire un fichier Docker à la main quand `enclos` connait les dépendances exactes ?
+
+```bash
+$ enclos export docker > Dockerfile
+# Génère un Dockerfile (ex: Alpine/Ubuntu) incluant toutes les dépendances système
+
+$ enclos export nix > flake.nix
+# Génère une configuration Nix reproductible
+```
+
+### 3. Installer les dépendances sur une autre machine
 
 ```bash
 $ git clone projet.git
 $ cd projet
 $ enclos install
-# Installe tout ce qui est dans enclave.lock
+# Installe localement tout ce qui est dans enclave.lock
 ```
 
-### 3. Ajouter des dépendances manuellement
+### 4. Gérer manuellement
 
 ```bash
 $ enclos add node@18
-$ enclos add python@3.11
-```
-
-### 4. Voir les dépendances actuelles
-
-```bash
 $ enclos list
 - node 18.0.0
 - python 3.11.2
-- gcc 13.2
 ```
 
 ---
@@ -151,16 +157,12 @@ dependencies:
       version: 3.11.2
     - name: gcc
       version: 13.2
-    - name: ffmpeg
-      version: 6.0
   libraries:
     - name: libssl
       version: 3.0.2
-    - name: libc
-      version: 2.38
 ```
 
-Tu le commit dans git → tout le monde a le même environnement.
+Tu le commit dans git → tout le monde a le même environnement de départ.
 
 ---
 
@@ -171,42 +173,44 @@ Tu le commit dans git → tout le monde a le même environnement.
 | mise/asdf | Gère les versions | Tu dois lister les dépendances toi-même |
 | Docker | Environnement isolé | Tu dois écrire le Dockerfile toi-même |
 | Nix | Reproductibilité | Tu dois écrire le flake.nix toi-même |
-| **enclos** | Détection auto | Le kernel trouve tout pour toi |
-
-**L'innovation d'enclos = la détection automatique via le kernel.**
+| ReproZip | Trace l'exécution | Lourd, orienté data-science, archive tout |
+| **enclos** | **Détection eBPF + Export** | **Génère pour toi (Docker/Nix) par la preuve** |
 
 ---
 
-## Architecture
+## Architecture (eBPF + Go)
 
-```
+```text
 enclos/
-├── kernel/              # Module kernel Linux (C)
-│   ├── enclos.c         # Hook sur execve, open, mmap
+├── ebpf/                # Programmes C eBPF (compilés vers BPF bytecode)
+│   ├── intercept_exec.c # Hook sur sys_enter_execve
+│   ├── intercept_mmap.c # Hook pour les librairies partagées
 │   └── Makefile
 ├── cli/                 # Outil en ligne de commande (Go)
 │   ├── main.go          # Point d'entrée
-│   ├── cmd/             # Commandes (track, install, add...)
+│   ├── parser/          # Analyse des traces et résolution des paquets
+│   ├── bpf_loader.go    # Charge et communique avec le code eBPF via cilium/ebpf
+│   ├── cmd/             # Commandes (track, export, install...)
 │   └── go.mod
-└── shell/               # Intégration shell
-    └── enclos.sh        # Activation auto au cd
+└── shell/               # Intégration shell optionnelle
+    └── enclos.sh
 ```
 
 ---
 
-## Installation (Fedora)
+## Installation (Développement)
 
 ```bash
-# Dépendances
-sudo dnf install kernel-devel kernel-headers gcc make golang
+# Dépendances requises : Go, Clang/LLVM (pour compiler le C vers eBPF), kernel headers
+sudo dnf install clang llvm golang kernel-devel
 
-# Compiler le module kernel
-cd kernel/
-make
-sudo insmod enclos.ko
+# Cloner le projet
+git clone <url-du-repo>
+cd enclos
 
-# Compiler et installer la CLI
-cd ../cli/
+# Compiler l'outil (Go compile et embarque automatiquement le bytecode eBPF avec 'go generate')
+cd cli
+go generate ./...
 go build -o enclos
 sudo mv enclos /usr/local/bin/
 ```
@@ -215,34 +219,36 @@ sudo mv enclos /usr/local/bin/
 
 ## Roadmap
 
-### Phase 1 - CLI basique (sans kernel)
-- [ ] Commandes `enclos add`, `enclos list`, `enclos install`
-- [ ] Format `enclave.lock`
-- [ ] Gestion des packages dans `~/.enclos/`
+### Phase 1 - MVP & Le Pilote "strace"
+- [ ] Créer le CLI de base (`add`, `list`) en **Go**.
+- [ ] Piloter `strace -f -e trace=execve` sous le capot pour simuler l'interception.
+- [ ] Parser la sortie de strace pour générer un premier `enclave.lock`.
 
-### Phase 2 - Module kernel
-- [ ] Hook sur `execve` (détecter les binaires lancés)
-- [ ] Hook sur `open` (détecter les fichiers lus)
-- [ ] Hook sur `mmap` (détecter les .so chargés)
-- [ ] Communication kernel ↔ userspace
+### Phase 2 - Les Exports Magiques
+- [ ] Commande `enclos export docker` pour générer un Dockerfile depuis le `.lock`.
+- [ ] Commande `enclos export nix` pour s'interfacer avec l'écosystème Nix.
 
-### Phase 3 - Intégration
-- [ ] Activation automatique au `cd`
-- [ ] Résolution et téléchargement des packages
-- [ ] Support multi-distro
+### Phase 3 - Moteur natif eBPF
+- [ ] Remplacer l'appel `strace` par un programme **eBPF** (en C restreint).
+- [ ] Charger le programme eBPF depuis Go (`cilium/ebpf`).
+- [ ] Intercepter `openat` et `mmap` pour tracer avec précision les bibliothèques C (`.so`).
+
+### Phase 4 - Intégration & Résolution
+- [ ] Mapping intelligent entre les binaires appelés et les noms de paquets (ex: `gcc` -> paquet `gcc` ou `build-essential`).
+- [ ] Support multi-distro.
 
 ---
 
 ## Stack technique
 
-- **Module kernel** : C
-- **CLI** : Go
+- **Moteur d'interception** : eBPF (C)
+- **CLI & Logique** : Go (avec `cilium/ebpf`)
 - **Cible** : Linux (Fedora, Ubuntu, Arch...)
 - **Tests** : Fedora 43
 
 ---
 
 ## Collaboration
--pour toute envie de collaboration contactez moi
+- Pour toute envie de collaboration, contactez-moi !
 
 *enclos - Parce que documenter ses dépendances manuellement, c'est has been.*
