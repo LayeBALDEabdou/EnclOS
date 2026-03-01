@@ -51,9 +51,18 @@ var trackCmd = &cobra.Command{
 				}
 			}
 		}
-		fmt.Println("\n la liste des dependances (sans doublons) : ")
-		for chemin := range dependancesUniques {
-			fmt.Println("-", chemin)
+
+		file, errfile := os.Create("enclave.lock")
+		if errfile != nil {
+			fmt.Println("erreur lors de la creation du fichier enclave.lock", errfile)
+		} else {
+			defer file.Close()
+			file.WriteString("fichier generer automatiquement par enclos \n")
+			file.WriteString("depenencies:\n")
+			for chemin := range dependancesUniques {
+				file.WriteString(fmt.Sprintf("  -%s\n", chemin))
+			}
+			fmt.Println("fichier enclave.lock generer avec succes !")
 		}
 
 		if err != nil {
