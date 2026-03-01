@@ -39,16 +39,23 @@ var trackCmd = &cobra.Command{
 		traceText := stderrBuffer.String()
 		lines := strings.Split(traceText, "\n")
 
+		dependancesUniques := make(map[string]bool)
+
 		for _, line := range lines {
 			if strings.Contains(line, "execve(") {
 				parts := strings.Split(line, `"`)
 
 				if len(parts) >= 3 {
 					binaryPath := parts[1]
-					fmt.Println("dependance detectee ", binaryPath)
+					dependancesUniques[binaryPath] = true
 				}
 			}
 		}
+		fmt.Println("\n la liste des dependances (sans doublons) : ")
+		for chemin := range dependancesUniques {
+			fmt.Println("-", chemin)
+		}
+
 		if err != nil {
 			fmt.Println("Erreur lors de l'execution de la commande : ", err)
 			os.Exit(1)
