@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -34,6 +35,20 @@ var trackCmd = &cobra.Command{
 		fmt.Println("------------------------------------------------------------")
 
 		err := sysCmd.Run()
+		fmt.Println("analyse des dependances ... ")
+		traceText := stderrBuffer.String()
+		lines := strings.Split(traceText, "\n")
+
+		for _, line := range lines {
+			if strings.Contains(line, "execve(") {
+				parts := strings.Split(line, `"`)
+
+				if len(parts) >= 3 {
+					binaryPath := parts[1]
+					fmt.Println("dependance detectee ", binaryPath)
+				}
+			}
+		}
 		if err != nil {
 			fmt.Println("Erreur lors de l'execution de la commande : ", err)
 			os.Exit(1)
@@ -47,7 +62,7 @@ func init() {
 	rootCmd.AddCommand(trackCmd)
 	trackCmd.DisableFlagParsing = true
 
-	// Here you will define your flags and configuration settings.
+	// Here you will define your flags and configurati	on settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
