@@ -57,10 +57,10 @@ var trackCmd = &cobra.Command{
 			fmt.Println("erreur lors de la creation du fichier enclave.lock", errfile)
 		} else {
 			defer file.Close()
-			file.WriteString("#fichier generer automatiquement par enclos \n")
-			file.WriteString("depenencies:\n")
+			file.WriteString("# fichier generer automatiquement par enclos \n")
+			file.WriteString("depedencies:\n")
 			for chemin := range dependancesUniques {
-				file.WriteString(fmt.Sprintf("  -%s\n", chemin))
+				file.WriteString(fmt.Sprintf("  - %s\n", chemin))
 			}
 			fmt.Println("fichier enclave.lock generer avec succes !")
 		}
