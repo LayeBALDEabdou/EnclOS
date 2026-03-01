@@ -4,6 +4,7 @@ Copyright © 2026 Abdoulaye BALDE <[EMAIL_ADDRESS]>
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -27,7 +28,8 @@ var trackCmd = &cobra.Command{
 
 		sysCmd := exec.Command("strace", straceArgs...)
 		sysCmd.Stdout = os.Stdout
-		sysCmd.Stderr = os.Stderr
+		var stderrBuffer bytes.Buffer
+		sysCmd.Stderr = &stderrBuffer
 		fmt.Println("tracking en cours pour la commande : ", args)
 		fmt.Println("------------------------------------------------------------")
 
