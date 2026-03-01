@@ -1,11 +1,12 @@
 /*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2026 Abdoulaye BALDE <[EMAIL_ADDRESS]>
 */
 package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
@@ -13,20 +14,36 @@ import (
 // trackCmd represents the track command
 var trackCmd = &cobra.Command{
 	Use:   "track",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "track les depenances systeme d'une commande",
+	Long:  `Avec cette commande, tu peux tracker les depenances systeme d'une commande`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("track called")
+		if len(args) == 0 {
+			fmt.Println("Erreur : Veuillez spécifier une commande a tracker (ex : enclos track ls -l)")
+			os.Exit(1)
+		}
+
+		straceArgs := []string{"-f", "-e", "trace=execve"}
+		straceArgs = append(straceArgs, args...)
+
+		sysCmd := exec.Command("strace", straceArgs...)
+		sysCmd.Stdout = os.Stdout
+		sysCmd.Stderr = os.Stderr
+		fmt.Println("tracking en cours pour la commande : ", args)
+		fmt.Println("------------------------------------------------------------")
+
+		err := sysCmd.Run()
+		if err != nil {
+			fmt.Println("Erreur lors de l'execution de la commande : ", err)
+			os.Exit(1)
+		}
+		fmt.Println("\n tracking termine avec succes")
+
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(trackCmd)
+	trackCmd.DisableFlagParsing = true
 
 	// Here you will define your flags and configuration settings.
 
