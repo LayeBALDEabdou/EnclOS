@@ -42,6 +42,11 @@ to quickly create a Cobra application.`,
 		lignes := strings.Split(texte, "\n")
 
 		for _, ligne := range lignes {
+
+			if !strings.Contains(ligne, " - ") {
+				continue
+			}
+
 			chemin := strings.TrimSpace(strings.ReplaceAll(ligne, "- ", ""))
 
 			morceaux := strings.Split(chemin, "/")
@@ -52,7 +57,7 @@ to quickly create a Cobra application.`,
 			}
 			nomPaquet, estConnu := traducteur[binaire]
 			if estConnu && nomPaquet == "" {
-				continue
+
 			}
 
 			if !estConnu {
