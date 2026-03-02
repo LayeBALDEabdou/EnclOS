@@ -4,17 +4,80 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/spf13/cobra"
 )
 
 // dockerCmd represents the docker command
 var dockerCmd = &cobra.Command{
 	Use:   "docker",
-	Short: "genere le Dockerfile",
-	Long: `docker permet d'extraire des informations dans l'enclave.lock
-	 pour generer le Dockerfile pret a l'emploi`,
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		contenu, err := os.ReadFile("enclave.lock")
+		if err != nil {
+			fmt.Println("impossible de lire enclave.lock . as tu lancé enclos track")
+			os.Exit(1)
+		}
+
+		texte := string(contenu)
+
+		traducteur := map[string]string{
+			"node":          "nodejs",
+			"node22":        "nodejs",
+			"npm":           "npm",
+			"awk":           "gawk",
+			"react-scripts": "",
+		}
+
+		paquetsAInstaller := make(map[string]bool)
+		lignes := strings.Split(texte, "\n")
+
+		for _, ligne := range lignes {
+			chemin := strings.TrimSpace(strings.ReplaceAll(ligne, "- ", ""))
+
+			morceaux := strings.Split(chemin, "/")
+			binaire := morceaux[len(morceaux)-1]
+
+			if binaire == "sh" || binaire == "ls" || binaire == "ps" || binaire == "sed" || binaire == "lsof" {
+				continue
+			}
+			nomPaquet, estConnu := traducteur[binaire]
+			if estConnu && nomPaquet == "" {
+				continue
+			}
+
+			if !estConnu {
+				nomPaquet = binaire
+			}
+
+			paquetsAInstaller[nomPaquet] = true
+
+		}
+
+		dockerfile, _ := os.Create("Dockerfile")
+		defer dockerfile.Close()
+
+		dockerfile.WriteString("FROM ubuntu:22.04 \n\n")
+		ligneInstall := "RUN apt-get update && apt-get install -y"
+
+		for paquet := range paquetsAInstaller {
+			ligneInstall += " " + paquet
+		}
+
+		dockerfile.WriteString(ligneInstall + "\n\n")
+		dockerfile.WriteString("WORKDIR /app\n")
+		dockerfile.WriteString("COPY . .\n")
+		fmt.Println("fichier Dockerfile cree avec success")
+
 	},
 }
 
