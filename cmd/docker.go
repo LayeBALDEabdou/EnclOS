@@ -32,7 +32,7 @@ to quickly create a Cobra application.`,
 
 		traducteur := map[string]string{
 			"node":          "nodejs",
-			"node22":        "nodejs",
+			"node-22":       "nodejs",
 			"npm":           "npm",
 			"awk":           "gawk",
 			"react-scripts": "",
@@ -57,7 +57,7 @@ to quickly create a Cobra application.`,
 			}
 			nomPaquet, estConnu := traducteur[binaire]
 			if estConnu && nomPaquet == "" {
-
+				continue
 			}
 
 			if !estConnu {
