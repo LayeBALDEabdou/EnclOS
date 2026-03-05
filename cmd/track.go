@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/LayeBALDEabdou/enclos/bpf"
 	"github.com/cilium/ebpf/link"
@@ -74,6 +76,7 @@ var trackCmd = &cobra.Command{
 		sysCmd.Stderr = os.Stderr
 
 		fmt.Println("enclos analyse :", args)
+		fmt.Println("Ctrl+C pour arrêter l'analyse et générer enclave.lock")
 		fmt.Println("--------------------------------------------")
 
 		if err := sysCmd.Start(); err != nil {
@@ -120,8 +123,25 @@ var trackCmd = &cobra.Command{
 			}
 		}()
 
-		if err := sysCmd.Wait(); err != nil {
-			fmt.Println("Avertissement : la commande s'est terminée avec une erreur :", err)
+		// Écouter Ctrl+C pour les serveurs et commandes longues
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		defer signal.Stop(sigChan)
+
+		// Canal pour la fin naturelle de la commande
+		cmdFini := make(chan error, 1)
+		go func() { cmdFini <- sysCmd.Wait() }()
+
+		// Attendre soit la fin de la commande, soit Ctrl+C
+		select {
+		case err := <-cmdFini:
+			if err != nil {
+				fmt.Println("Avertissement : la commande s'est terminée avec une erreur :", err)
+			}
+		case <-sigChan:
+			fmt.Println("\nAnalyse arrêtée.")
+			sysCmd.Process.Signal(syscall.SIGTERM)
+			<-cmdFini
 		}
 
 		rd.Close()
