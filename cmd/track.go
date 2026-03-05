@@ -1,5 +1,5 @@
 /*
-Copyright © 2026 Abdoulaye BALDE <[EMAIL_ADDRESS]>
+Copyright © 2026 Abdoulaye BALDE <twoylit@gmail.com>
 */
 package cmd
 
@@ -83,7 +83,7 @@ var trackCmd = &cobra.Command{
 		}
 
 		cmdPID := sysCmd.Process.Pid
-		binaires   := make(map[string]bool)
+		binaires := make(map[string]bool)
 		librairies := make(map[string]bool)
 		done := make(chan struct{})
 
@@ -112,7 +112,7 @@ var trackCmd = &cobra.Command{
 					continue
 				}
 
-				if strings.Contains(filename, ".so") {
+				if strings.Contains(filename, ".so.") || strings.HasSuffix(filename, ".so") {
 					librairies[filename] = true
 				} else {
 					binaires[filename] = true

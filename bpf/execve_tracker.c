@@ -91,12 +91,14 @@ int trace_openat(struct openat_args *ctx)
 
     // Parcourir le chemin pour détecter la présence de ".so"
     for (int i = 0; i < PATH_MAX_LEN - 3; i++) {
-        if (chemin[i] == '.' && chemin[i+1] == 's' && chemin[i+2] == 'o') {
-            // C'est une librairie .so → on envoie l'événement
-            return envoyer_event(ctx->filename);
-        }
         if (chemin[i] == '\0')
             break;
+        // Vérifier ".so" suivi de fin de chaîne ou d'un "." (ex: .so.3)
+        // pour éviter les faux positifs sur des dossiers comme "aso" ou "reso"
+        if (chemin[i] == '.' && chemin[i+1] == 's' && chemin[i+2] == 'o' &&
+            (chemin[i+3] == '\0' || chemin[i+3] == '.')) {
+            return envoyer_event(ctx->filename);
+        }
     }
 
     return 0;
