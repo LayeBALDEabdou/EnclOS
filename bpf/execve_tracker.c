@@ -39,16 +39,19 @@ struct execve_args {
     const char *const *envp;
 };
 
-// Arguments du tracepoint sys_enter_openat
+// Arguments du tracepoint sys_enter_openat.
+// Sur x86_64, les arguments syscall sont stockés en 8 octets (long),
+// même si leur type réel est int. Utiliser long pour dfd et flags
+// garantit le bon alignement et donc la bonne adresse pour filename.
 struct openat_args {
     unsigned short common_type;
     unsigned char common_flag;
     unsigned char common_preempt_count;
     int common_pid;
     int __syscall_nr;
-    int dfd;
+    long dfd;
     const char *filename;
-    int flags;
+    long flags;
     unsigned short mode;
 };
 

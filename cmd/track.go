@@ -122,9 +122,10 @@ var trackCmd = &cobra.Command{
 
 				// Convertir le nom de fichier (tableau C de bytes) en string Go
 				filename := string(bytes.TrimRight(event.Filename[:], "\x00"))
-				if filename != "" {
-					dependances[filename] = true
+				if filename == "" || filename == "/etc/ld.so.cache" {
+					continue
 				}
+				dependances[filename] = true
 			}
 		}()
 
