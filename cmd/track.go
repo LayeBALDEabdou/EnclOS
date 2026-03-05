@@ -49,13 +49,21 @@ var trackCmd = &cobra.Command{
 		}
 		defer objs.Close()
 
-		// 3. Activer l'interception de chaque exécution de programme
-		tp, err := link.Tracepoint("syscalls", "sys_enter_execve", objs.TraceExecve, nil)
+		// 3. Activer l'interception des exécutions de programmes
+		tpExecve, err := link.Tracepoint("syscalls", "sys_enter_execve", objs.TraceExecve, nil)
 		if err != nil {
 			fmt.Println("Erreur : enclos n'a pas pu s'attacher au kernel :", err)
 			return
 		}
-		defer tp.Close()
+		defer tpExecve.Close()
+
+		// Activer l'interception des ouvertures de librairies .so
+		tpOpenat, err := link.Tracepoint("syscalls", "sys_enter_openat", objs.TraceOpenat, nil)
+		if err != nil {
+			fmt.Println("Erreur : enclos n'a pas pu intercepter les librairies :", err)
+			return
+		}
+		defer tpOpenat.Close()
 
 		// 4. Préparer la réception des événements AVANT de lancer la commande
 		// pour ne rater aucune exécution dès le démarrage.
