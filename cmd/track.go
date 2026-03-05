@@ -37,7 +37,7 @@ var trackCmd = &cobra.Command{
 
 		// 1. Autoriser l'utilisation de mémoire nécessaire à l'observation kernel
 		if err := rlimit.RemoveMemlock(); err != nil {
-			fmt.Println("Erreur : enclos n'a pas les permissions nécessaires (tu es root ?)")
+			fmt.Println("Erreur : enclos n'a pas les permissions nécessaires (es tu root ?)")
 			return
 		}
 
