@@ -55,6 +55,7 @@ type BpfSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type BpfProgramSpecs struct {
 	TraceExecve *ebpf.ProgramSpec `ebpf:"trace_execve"`
+	TraceOpenat *ebpf.ProgramSpec `ebpf:"trace_openat"`
 }
 
 // BpfMapSpecs contains maps before they are loaded into the kernel.
@@ -110,11 +111,13 @@ type BpfVariables struct {
 // It can be passed to LoadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type BpfPrograms struct {
 	TraceExecve *ebpf.Program `ebpf:"trace_execve"`
+	TraceOpenat *ebpf.Program `ebpf:"trace_openat"`
 }
 
 func (p *BpfPrograms) Close() error {
 	return _BpfClose(
 		p.TraceExecve,
+		p.TraceOpenat,
 	)
 }
 
